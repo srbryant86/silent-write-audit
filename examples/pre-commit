@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Example pre-commit hook that runs silent-write-audit on staged TypeScript
+# changes and blocks the commit if any CRITICAL findings are introduced.
+#
+# Install:
+#   cp examples/pre-commit .githooks/pre-commit
+#   chmod +x .githooks/pre-commit
+#   git config core.hooksPath .githooks
+
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+
+if [ -z "$STAGED_TS_FILES" ]; then
+  echo "[silent-write-audit] No staged TypeScript files."
+  exit 0
+fi
+
+# Pull SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF from .env.local if not in shell.
+if [ -f ".env.local" ]; then
+  if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+    export SUPABASE_ACCESS_TOKEN=$(grep -E "^SUPABASE_ACCESS_TOKEN=" .env.local | head -1 | cut -d= -f2- | tr -d '"')
+  fi
+  if [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+    export SUPABASE_PROJECT_REF=$(grep -E "^SUPABASE_PROJECT_REF=" .env.local | head -1 | cut -d= -f2- | tr -d '"')
+  fi
+fi
+
+if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+  echo "[silent-write-audit] SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF unset — skipping audit."
+  echo "  (set them in .env.local to enable the pre-commit gate)"
+  exit 0
+fi
+
+if ! npx silent-write-audit --staged --ci-critical-only; then
+  echo ""
+  echo "❌ silent-write-audit found CRITICAL phantom-column references in staged code."
+  echo "   PostgREST will silently reject these writes at runtime."
+  echo "   Fix the column reference, or add '// silent-write-audit-ignore' if intentional."
+  echo "   To bypass (NOT RECOMMENDED): git commit --no-verify"
+  exit 1
+fi

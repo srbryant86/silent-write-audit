@@ -1,0 +1,11 @@
+{
+  "scanDirs": ["app", "lib"],
+  "criticalTables": [
+    "billing",
+    "payments",
+    "subscriptions",
+    "invoices",
+    "disputes",
+    "webhooks_received"
+  ]
+}
