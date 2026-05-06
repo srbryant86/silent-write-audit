@@ -34,8 +34,6 @@ npm install -D @certnode/silent-write-audit
 npx @certnode/silent-write-audit --help
 ```
 
-(While npm publication is finalized, you can also install directly from this repo: `npm install -D srbryant86/silent-write-audit`.)
-
 ## Quick start
 
 ```bash

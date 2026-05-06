@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] — 2026-05-06
+
+### Fixed
+- `bin` field now uses string form (`"bin": "./index.mjs"`) so npm publishes the CLI shim correctly. The 0.1.0 publish stripped the `bin` entry due to a strict-validation warning on the object form, leaving `npx @certnode/silent-write-audit` non-functional. 0.1.1 restores it.
+- `repository.url` normalized to `git+https://...` form to match npm convention.
+
+### Removed
+- README pre-publish-disclaimer line (no longer relevant now that `@certnode/silent-write-audit` is on npm).
+
 ## [0.1.0] — 2026-05-06
 
 Initial public release. Extracted from CertNode's internal audit tooling.
