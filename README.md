@@ -222,16 +222,23 @@ For your $1,497, in 7 calendar days, you get:
 
 **First 5 customers: $1,197** with code `FIRST5` (a $300 founder's discount).
 
-Email **contact@certnode.io** with subject "silent-write audit — [your company]" and we'll reply within 24 hours. Include: stack confirmation (Postgres? Supabase? Stripe?), repo size estimate, and how to get a read-only schema dump (Supabase Management token, `pg_dump` URL, or a one-time schema file).
+**Two ways to engage:**
+
+- **Self-serve (FIRST5):** [pay $1,197 via Stripe](https://buy.stripe.com/28E6oH6hteRGbFxfkZ73G00) — we'll reach out within 24h to collect your schema-dump credential and start the audit.
+- **Email first:** drop a note to **contact@certnode.io** with subject "silent-write audit — [your company]". Reply within 24h. Include stack confirmation (Postgres? Supabase? Stripe?), repo size estimate, and how to get a read-only schema dump (Supabase Management token, `pg_dump` URL, or a one-time schema file). Invoice on day 7 after PRs are merged or rejected.
 
 This is run by the CertNode team — Stripe Partner (Apps track), 4 published Stripe Marketplace apps, primary author of the audit you just installed.
 
 ## Roadmap
 
-- v0.2 — direct `DATABASE_URL` and `pg_dump` schema sources (drop the Supabase requirement)
-- v0.3 — Drizzle and Prisma adapters
-- v0.4 — Postgres function (`select`, `rpc`) parameter audit
-- v0.5 — npm publish under `@certnode/silent-write-audit`
+Each release below is **demand-gated** — built when a real user (not us) asks for it. We'd rather ship narrow on real signal than broad on speculation.
+
+- **v0.2 — DATABASE_URL + `pg_dump` schema sources.** Drops the Supabase requirement; works on any Postgres + PostgREST stack. Gated on first non-Supabase user requesting it.
+- **v0.3 — Drizzle and Prisma adapters.** Different parser path per ORM. Gated on first Drizzle/Prisma user opening an issue with a representative file.
+- **v0.4 — `rpc()` parameter audit.** Stored-procedure call sites cross-referenced against `pg_proc` definitions.
+- **Sibling tools (separate packages):** `stripe-webhook-audit` (idempotency + signing + retry), `supabase-rls-audit` (missing RLS on public tables), `stripe-api-version-audit` (deprecated patterns). Each independently useful, same shape as this audit.
+
+Already shipped: published to npm as `@certnode/silent-write-audit` (latest v0.1.2). Install via `npm install -D @certnode/silent-write-audit` or run ad-hoc with `npx`.
 
 ## Contributing
 
