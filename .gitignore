@@ -5,3 +5,14 @@ node_modules/
 .schema-cache.json
 *.log
 .DS_Store
+
+# Walkthrough build artifacts (regenerable via media/build/build-walkthrough.py)
+media/build/*.png
+media/build/*.mp3
+media/build/01-hook.mp4
+media/build/02-bug-class.mp4
+media/build/03-findings.mp4
+media/build/04-deliverables.mp4
+media/build/05-pricing.mp4
+media/build/06-close.mp4
+media/build/concat-list.txt

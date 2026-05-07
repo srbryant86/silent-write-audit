@@ -1,5 +1,9 @@
 # silent-write-audit
 
+<video src="https://raw.githubusercontent.com/srbryant86/silent-write-audit/main/media/silent-write-audit-walkthrough.mp4" controls width="100%" style="max-width:720px"></video>
+
+> 90-second walkthrough: bug class, what we found in our own codebase, what the audit delivers, pricing.
+
 A static-analysis audit for the silent-fail bug class in Supabase / PostgREST writes — where a `.update({...})` call with a column that doesn't exist on the target table is silently rejected, the entire statement is dropped, and your code logs one line nobody reads.
 
 ```ts
