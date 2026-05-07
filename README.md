@@ -2,7 +2,7 @@
 
 <video src="https://raw.githubusercontent.com/srbryant86/silent-write-audit/main/media/silent-write-audit-walkthrough.mp4" controls width="100%" style="max-width:720px"></video>
 
-> 90-second walkthrough: bug class, what we found in our own codebase, what the audit delivers, pricing.
+> ~90-second walkthrough (AI-narrated): bug class, what we found in our own codebase, what the audit delivers, pricing.
 
 A static-analysis audit for the silent-fail bug class in Supabase / PostgREST writes — where a `.update({...})` call with a column that doesn't exist on the target table is silently rejected, the entire statement is dropped, and your code logs one line nobody reads.
 
@@ -98,6 +98,8 @@ Tip: add `// silent-write-audit-ignore` on the line above an op to allowlist it.
 
 Each `🔥 CRITICAL` is a write or read against a revenue-tagged table that PostgREST has been silently rejecting. Each `⚠️ HIGH` is a non-revenue table with the same bug class. The fix is one keystroke per finding (rename, remove, or move-to-metadata); the audit cost is the months of revenue you lost not knowing.
 
+> _Output above is shape-illustrative: our own production scan found ~50 findings; we've shown 5 of the most damaging and abbreviated the rest. By default (no `.silent-write-audit.json`), all findings show as `⚠️ HIGH` severity — `🔥 CRITICAL` requires the optional `criticalTables` config below._
+
 JSON output (`--json`) emits the same findings in a structured form for CI:
 
 ```json
@@ -178,25 +180,7 @@ JSON output for parsing in CI:
 npx silent-write-audit --json > audit.json
 ```
 
-Output shape:
-
-```json
-{
-  "findings": [
-    {
-      "file": "app/api/webhooks/stripe/route.ts",
-      "line": 142,
-      "table": "disputes",
-      "op": "update",
-      "kind": "update_payload_phantom",
-      "missing": ["won", "evidence_score"],
-      "all_keys": ["status", "won", "evidence_score", "updated_at"],
-      "severity": "critical"
-    }
-  ],
-  "summary": { "total": 1, "critical": 1, "high": 0 }
-}
-```
+Same shape as the JSON example in the Sample output section above. CI parsers can read `summary.critical` directly to gate builds on critical-only findings.
 
 Exit codes:
 - `0` — no findings (or no critical findings if `--ci-critical-only`)
