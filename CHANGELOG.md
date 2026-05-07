@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] — 2026-05-06
+
+### Changed
+- Authorship metadata switched from indie-founder form to company form. `package.json` author is now `CertNode <contact@certnode.io>`; LICENSE copyright is `SRB Creative Holdings LLC (CertNode)`; README Author section reads `Built at CertNode`. No code changes.
+
 ## [0.1.1] — 2026-05-06
 
 ### Fixed

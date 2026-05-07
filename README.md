@@ -179,4 +179,4 @@ MIT — see [LICENSE](./LICENSE).
 
 ## Author
 
-Built by [Steven Bryant](https://github.com/srbryant86) at [CertNode](https://certnode.io). Contact at `contact@certnode.io`.
+Built at [CertNode](https://certnode.io). Contact at `contact@certnode.io`.
