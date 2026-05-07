@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ─── Config ────────────────────────────────────────────────────────────────
 
-VOICE = "en-US-AndrewNeural"  # warm, confident, technical-friendly
+VOICE = "en-US-AndrewMultilingualNeural"  # higher-quality variant of Andrew — Microsoft's premium English neural voice
 SLIDE_W, SLIDE_H = 1280, 720
 BUILD_DIR = Path(__file__).parent
 MEDIA_DIR = BUILD_DIR.parent
