@@ -50,6 +50,70 @@ npx silent-write-audit --staged --ci-critical-only
 
 The first run hits the Supabase Management API for your live schema and caches it for 24 hours in `.schema-cache.json`. Subsequent runs are fast (a few hundred milliseconds for a mid-sized codebase).
 
+## Sample output
+
+Run against a real codebase, the human-readable output looks like this (these are paraphrased real findings from our own production scan):
+
+```
+$ npx silent-write-audit
+
+[silent-write-audit] Schema loaded: 47 tables
+[silent-write-audit] Scanning 287 files...
+
+[silent-write-audit] ⚠ Found 12 issue(s) (8 critical, 4 high)
+
+🔥 CRITICAL  app/api/webhooks/stripe/dispute/route.ts:142
+         table: disputes.update
+         missing: won, evidence_score
+         (PostgREST PGRST204 rejects the entire update — silent fail)
+
+🔥 CRITICAL  app/api/webhooks/stripe/connected/route.ts:67
+         table: connected_accounts.update
+         missing: charges_enabled
+         (PostgREST PGRST204 rejects the entire update — silent fail)
+
+🔥 CRITICAL  lib/billing/woocommerce-fees.ts:198
+         table: pending_fees.upsert
+         missing: platform, external_dispute_id, fee_amount, fee_rate, amount_won
+         (PostgREST PGRST204 rejects the entire upsert — silent fail)
+
+🔥 CRITICAL  app/api/webhooks/shopify/gdpr/redact/route.ts:54
+         table: dispute_evidence.delete (filter chain)
+         missing: organization_id
+         (PostgREST 400s the entire query — returns null data, silent fail)
+
+⚠️  HIGH     lib/disputes/evidence-vault.ts:203
+         table: dispute_evidence.select
+         missing: organization_id
+         (PostgREST 400s the entire query — returns null data, silent fail)
+
+... (7 more findings omitted)
+
+Tip: add `// silent-write-audit-ignore` on the line above an op to allowlist it.
+```
+
+Each `🔥 CRITICAL` is a write or read against a revenue-tagged table that PostgREST has been silently rejecting. Each `⚠️ HIGH` is a non-revenue table with the same bug class. The fix is one keystroke per finding (rename, remove, or move-to-metadata); the audit cost is the months of revenue you lost not knowing.
+
+JSON output (`--json`) emits the same findings in a structured form for CI:
+
+```json
+{
+  "findings": [
+    {
+      "file": "app/api/webhooks/stripe/dispute/route.ts",
+      "line": 142,
+      "table": "disputes",
+      "op": "update",
+      "kind": "update_payload_phantom",
+      "missing": ["won", "evidence_score"],
+      "all_keys": ["status", "won", "evidence_score", "updated_at"],
+      "severity": "critical"
+    }
+  ],
+  "summary": { "total": 12, "critical": 8, "high": 4 }
+}
+```
+
 ## Config
 
 Optional `.silent-write-audit.json` in your project root:
