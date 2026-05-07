@@ -167,10 +167,59 @@ This is what we run on the CertNode monorepo. It has blocked silent-write bugs f
 - TypeScript and TSX (uses the TypeScript compiler API, not regex)
 
 **Does NOT cover (yet):**
-- Drizzle, Prisma, TypeORM, or other ORM patterns. The audit is currently PostgREST/Supabase-JS specific. (If you need ORM support, please open an issue — we're prioritizing based on demand.)
+- Drizzle, TypeORM, or other ORM patterns. (Prisma is supported as of v0.3; see "Prisma adapter" below. If you need Drizzle / TypeORM, open an issue.)
 - Spread operators in payloads (`{...obj}`). Can't be statically analyzed; will silently skip these objects.
 - Joined-relation column filters (`.eq('related_table.col', value)`). Skipped to avoid false positives, since validation requires parsing the chain's `.select()` to know which embeds were declared.
-- PostgreSQL direct connections. v0.2 will support `DATABASE_URL` and `pg_dump` schema files.
+- PostgreSQL direct connections. A future release will support `DATABASE_URL` and `pg_dump` schema files (gated on first non-Supabase user requesting it).
+
+## Prisma adapter (v0.3+)
+
+If your codebase uses Prisma instead of (or alongside) Supabase-JS, the audit can validate Prisma call sites against your `schema.prisma`:
+
+```bash
+# Default: looks for ./prisma/schema.prisma
+npx silent-write-audit --skip-supabase
+
+# Or point at a custom path (monorepo case)
+npx silent-write-audit --skip-supabase --prisma-schema packages/db/schema.prisma
+
+# Both Supabase + Prisma in the same repo (rare but supported)
+npx silent-write-audit  # auto-detects both
+```
+
+**What's checked:**
+
+- `prisma.<model>.create({ data: { ... } })` — payload keys vs schema fields
+- `prisma.<model>.update({ where, data })` — both halves checked independently
+- `prisma.<model>.upsert({ where, create, update })` — three sections each checked
+- `prisma.<model>.findUnique / findFirst / findMany({ where, select })` — both `where` keys and `select` keys
+- `prisma.<model>.delete / deleteMany / updateMany / count / aggregate({ where })` — `where` keys
+- `prisma.<model>.createMany({ data: [...] })` — first element of array (representative shape)
+
+**Compound-unique-key support.** Prisma generates synthetic `where`-clause fields from `@@unique([a, b])` and `@@id([a, b])` directives. The adapter recognizes:
+
+- `@@unique([a, b])` → synthetic `a_b`
+- `@@unique([a, b], name: "myKey")` → synthetic `myKey`
+- `@@unique(fields: [a, b])` → synthetic `a_b`
+- `@@id([a, b])` → synthetic `a_b`
+
+These are valid `where` inputs and are NOT flagged as phantom.
+
+**Multi-schema monorepos.** If your scan paths contain other `schema.prisma` files (e.g., `packages/platform/examples/base/prisma/schema.prisma`), the adapter auto-detects them and skips Prisma checks under those subtrees — those files use a different schema. The active schema specified by `--prisma-schema` is the only one validated against; sub-schema dirs are reported on startup so you can confirm the boundaries.
+
+**Custom client names.** By default the adapter recognizes `prisma`, `db`, `tx`, and `client` as Prisma client identifiers. Override via config:
+
+```json
+{
+  "prismaClientNames": ["prisma", "db", "tx", "extendedDb"]
+}
+```
+
+**Flags:**
+
+- `--prisma-schema PATH` — path to `schema.prisma` (default: `./prisma/schema.prisma`)
+- `--skip-supabase` — skip Supabase scan (Prisma-only mode)
+- `--skip-prisma` — skip Prisma scan (Supabase-only mode)
 
 ## CI integration
 
@@ -253,12 +302,12 @@ The badge isn't a certification — it's a public commitment to the bug class. T
 
 Each release below is **demand-gated** — built when a real user (not us) asks for it. We'd rather ship narrow on real signal than broad on speculation.
 
-- **v0.2 — DATABASE_URL + `pg_dump` schema sources.** Drops the Supabase requirement; works on any Postgres + PostgREST stack. Gated on first non-Supabase user requesting it.
-- **v0.3 — Drizzle and Prisma adapters.** Different parser path per ORM. Gated on first Drizzle/Prisma user opening an issue with a representative file.
-- **v0.4 — `rpc()` parameter audit.** Stored-procedure call sites cross-referenced against `pg_proc` definitions.
+- **v0.4 — Drizzle adapter.** Different parser path. Gated on first Drizzle user opening an issue with a representative file.
+- **v0.5 — DATABASE_URL + `pg_dump` schema sources.** Drops the Supabase Management API requirement; works on any Postgres + PostgREST stack via direct connection or schema file.
+- **v0.6 — `rpc()` parameter audit.** Stored-procedure call sites cross-referenced against `pg_proc` definitions.
 - **Sibling tools (separate packages):** `stripe-webhook-audit` (idempotency + signing + retry), `supabase-rls-audit` (missing RLS on public tables), `stripe-api-version-audit` (deprecated patterns). Each independently useful, same shape as this audit.
 
-Already shipped: published to npm as `@certnode/silent-write-audit` (latest v0.1.3). Install via `npm install -D @certnode/silent-write-audit` or run ad-hoc with `npx`.
+Already shipped: published to npm as `@certnode/silent-write-audit` (latest v0.3.0). Install via `npm install -D @certnode/silent-write-audit` or run ad-hoc with `npx`. v0.3 adds the Prisma adapter.
 
 ## Contributing
 
