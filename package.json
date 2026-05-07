@@ -1,6 +1,6 @@
 {
   "name": "@certnode/silent-write-audit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Static-analysis audit for phantom-column references in Supabase/PostgREST writes. Catches the silent-fail bug class where .update({...}) with a non-existent column drops the entire statement without error.",
   "type": "module",
   "main": "index.mjs",

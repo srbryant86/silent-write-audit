@@ -214,6 +214,41 @@ If you'd rather have someone external run this on your repo, triage the findings
 
 This is run by the CertNode team — Stripe Partner (Apps track), 4 published Stripe Marketplace apps, primary author of the audit you just installed.
 
+### What Watch delivers in detail
+
+Watch is the recurring-protection tier. Concrete deliverables for $4,997/year:
+
+- **Quarterly audit re-runs** — 4× per year against your live schema. We catch new phantom-column references that appeared since the last audit.
+- **Pre-commit webhook integration** — every finding caught at commit time POSTs to your Slack / Discord / custom URL. See `examples/pre-commit-with-watch-webhook` for the install. Configure with `WATCH_WEBHOOK_URL` (and optional `WATCH_WEBHOOK_SECRET` for HMAC-signed payloads).
+- **Priority 24h response** on new findings (vs the 7-day SLA on one-time tiers).
+- **New-bug-class release notes** — when the audit logic gains new patterns (new ORM adapter, new column types, sibling tools we ship), Watch subscribers get a release-note email rather than discovering it on next quarterly run.
+- **Annual aggregated trend report** — findings-over-time chart you can hand to your auditor or board (compliance-useful for SOC2 / ISO 27001 prep).
+- **Pre-commit hook maintenance** — when you change Postgres provider, add tables, or evolve schema patterns, we update your `.silent-write-audit.json` config so the gate stays accurate without you maintaining it.
+
+Watch can be cancelled at any time; we don't lock you into the year. Pro-rated refund on remaining quarters if you cancel mid-cycle.
+
+### Audited by CertNode
+
+If you've engaged the audit (paid or via the OSS tool) and your codebase is clean (or post-fix), you can publicly attest. We don't gate the badge — running the audit makes it yours:
+
+```markdown
+[![Audited by CertNode](https://img.shields.io/badge/Audited_by-CertNode-10b981)](https://github.com/srbryant86/silent-write-audit)
+```
+
+Renders as a small green pill in your README. Or a tweet template:
+
+> *"Our codebase was audited for silent-write bugs by CertNode. \[N\] findings caught + fixed. The audit tool is open source: github.com/srbryant86/silent-write-audit"*
+
+The badge isn't a certification — it's a public commitment to the bug class. The audit is reproducible by anyone with `npx`.
+
+## Examples
+
+- **`examples/pre-commit`** — basic pre-commit hook that blocks commits on critical findings.
+- **`examples/pre-commit-with-watch-webhook`** — extended pre-commit for Watch-tier customers; same blocking behavior plus webhook POST on every finding.
+- **`examples/sample-report.md`** — what a Full-delivery audit deliverable looks like. Real-shape with illustrative customer name; structure matches what paid customers receive.
+- **`examples/audit-deliverable-template.md`** — the internal template auditors fill in. Published so customers can preview the deliverable structure before engaging.
+- **`examples/auto-pr-template.md`** — patch-PR description format used in Full-delivery engagements. Lifts per-PR write-time from ~30min → ~5min and surfaces the revenue impact of each fix consistently across PRs.
+
 ## Roadmap
 
 Each release below is **demand-gated** — built when a real user (not us) asks for it. We'd rather ship narrow on real signal than broad on speculation.
@@ -223,7 +258,7 @@ Each release below is **demand-gated** — built when a real user (not us) asks 
 - **v0.4 — `rpc()` parameter audit.** Stored-procedure call sites cross-referenced against `pg_proc` definitions.
 - **Sibling tools (separate packages):** `stripe-webhook-audit` (idempotency + signing + retry), `supabase-rls-audit` (missing RLS on public tables), `stripe-api-version-audit` (deprecated patterns). Each independently useful, same shape as this audit.
 
-Already shipped: published to npm as `@certnode/silent-write-audit` (latest v0.1.2). Install via `npm install -D @certnode/silent-write-audit` or run ad-hoc with `npx`.
+Already shipped: published to npm as `@certnode/silent-write-audit` (latest v0.1.3). Install via `npm install -D @certnode/silent-write-audit` or run ad-hoc with `npx`.
 
 ## Contributing
 

@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook with Watch-tier webhook integration.
+#
+# Same as examples/pre-commit (block commit on critical findings), but
+# additionally POSTs the JSON findings to a configured webhook URL on every
+# run. This is the recurring-value mechanism for the $4,997/year Watch tier:
+# customers get a Slack/Discord notification (or any webhook receiver) every
+# time a phantom-column reference is caught at commit time, even if the
+# commit itself is allowed through.
+#
+# Install:
+#   cp examples/pre-commit-with-watch-webhook .githooks/pre-commit
+#   chmod +x .githooks/pre-commit
+#   git config core.hooksPath .githooks
+#
+# Configure (in .env.local or shell env):
+#   WATCH_WEBHOOK_URL       — webhook receiver (Slack incoming webhook, Discord, custom).
+#                             Optional. If unset, the hook behaves identically
+#                             to the basic pre-commit example.
+#   WATCH_WEBHOOK_SECRET    — optional shared secret. If set, sent as
+#                             `X-Watch-Signature: sha256=<hmac>` header for
+#                             receiver verification.
+#   WATCH_INCLUDE_HIGH      — `1` to include `high`-severity findings in the
+#                             webhook payload. Default: critical only (matches
+#                             the commit-blocking gate).
+
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+
+if [ -z "$STAGED_TS_FILES" ]; then
+  echo "[silent-write-audit] No staged TypeScript files."
+  exit 0
+fi
+
+# Pull SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, and Watch webhook config
+# from .env.local if not already in shell env.
+if [ -f ".env.local" ]; then
+  for VAR in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF WATCH_WEBHOOK_URL WATCH_WEBHOOK_SECRET WATCH_INCLUDE_HIGH; do
+    if [ -z "${!VAR:-}" ]; then
+      VAL=$(grep -E "^${VAR}=" .env.local | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'") || true
+      if [ -n "$VAL" ]; then
+        export "$VAR=$VAL"
+      fi
+    fi
+  done
+fi
+
+if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+  echo "[silent-write-audit] SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF unset — skipping audit."
+  echo "  (set them in .env.local to enable the pre-commit gate)"
+  exit 0
+fi
+
+# Run the audit and capture JSON. We always run --json so we can post to the
+# webhook; the human-readable output is reconstructed below if needed.
+AUDIT_JSON=$(npx silent-write-audit --staged --json 2>/dev/null || true)
+
+if [ -z "$AUDIT_JSON" ]; then
+  echo "[silent-write-audit] Audit returned no output. Skipping."
+  exit 0
+fi
+
+# Parse summary using node (we're already in a node project).
+TOTAL=$(echo "$AUDIT_JSON" | node -e 'process.stdin.on("data",d=>{try{const j=JSON.parse(d);console.log(j.summary?.total||0)}catch{console.log(0)}})')
+CRITICAL=$(echo "$AUDIT_JSON" | node -e 'process.stdin.on("data",d=>{try{const j=JSON.parse(d);console.log(j.summary?.critical||0)}catch{console.log(0)}})')
+HIGH=$(echo "$AUDIT_JSON" | node -e 'process.stdin.on("data",d=>{try{const j=JSON.parse(d);console.log(j.summary?.high||0)}catch{console.log(0)}})')
+
+# Post to Watch webhook if configured AND there are findings worth reporting.
+if [ -n "${WATCH_WEBHOOK_URL:-}" ]; then
+  if [ "$CRITICAL" -gt 0 ] || { [ "${WATCH_INCLUDE_HIGH:-}" = "1" ] && [ "$HIGH" -gt 0 ]; }; then
+    echo "[silent-write-audit] Watch webhook → $WATCH_WEBHOOK_URL ($CRITICAL critical, $HIGH high)"
+
+    # Build payload with metadata: repo, branch, commit author, timestamp.
+    PAYLOAD=$(node -e "
+      const data = JSON.parse(process.argv[1]);
+      const { execSync } = require('child_process');
+      const repo = execSync('git rev-parse --show-toplevel').toString().trim().split(/[\\\\/]/).pop();
+      const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+      const author = execSync('git config user.email').toString().trim();
+      console.log(JSON.stringify({
+        source: 'silent-write-audit',
+        event: 'pre-commit-findings',
+        repo, branch, author,
+        timestamp: new Date().toISOString(),
+        summary: data.summary,
+        findings: ${WATCH_INCLUDE_HIGH:-0} ? data.findings : data.findings.filter(f => f.severity === 'critical')
+      }));
+    " "$AUDIT_JSON")
+
+    if [ -n "${WATCH_WEBHOOK_SECRET:-}" ]; then
+      SIG=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WATCH_WEBHOOK_SECRET" -hex | sed 's/^.* //')
+      curl -s -X POST -H 'Content-Type: application/json' -H "X-Watch-Signature: sha256=$SIG" -d "$PAYLOAD" "$WATCH_WEBHOOK_URL" > /dev/null || true
+    else
+      curl -s -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$WATCH_WEBHOOK_URL" > /dev/null || true
+    fi
+  fi
+fi
+
+# Block the commit on critical findings (same as basic pre-commit).
+if [ "$CRITICAL" -gt 0 ]; then
+  echo ""
+  echo "❌ silent-write-audit found $CRITICAL CRITICAL phantom-column reference(s) in staged code."
+  echo "   PostgREST will silently reject these writes at runtime."
+  echo ""
+  # Re-run for human-readable output (cheap because schema is cached).
+  npx silent-write-audit --staged --ci-critical-only || true
+  echo ""
+  echo "   Fix the column reference, or add '// silent-write-audit-ignore' if intentional."
+  echo "   To bypass (NOT RECOMMENDED): git commit --no-verify"
+  exit 1
+fi
+
+if [ "$HIGH" -gt 0 ]; then
+  echo "[silent-write-audit] $HIGH high-severity finding(s) in staged files (commit allowed)."
+fi
+
+echo "[silent-write-audit] OK ($TOTAL findings, 0 critical)"
+exit 0

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] — 2026-05-07
+
+### Added
+- `examples/pre-commit-with-watch-webhook` — extended pre-commit hook with Watch-tier webhook integration. POSTs JSON findings (with optional HMAC-SHA256 signature via `WATCH_WEBHOOK_SECRET`) to a customer-supplied `WATCH_WEBHOOK_URL` on every commit-time audit run. Recurring-value mechanism for the $4,997/year Watch tier.
+- `examples/sample-report.md` — illustrative-shape Full-delivery audit deliverable. Lets prospects preview the report structure before engaging.
+- `examples/audit-deliverable-template.md` — internal template auditors fill in per engagement. Published so customers can see the structure.
+- `examples/auto-pr-template.md` — patch-PR description format for Full-delivery engagements. Cuts per-PR write-time ~30min → ~5min while surfacing revenue impact consistently.
+- README "What Watch delivers in detail" subsection — concrete deliverables for the $4,997/year tier (quarterly re-audits, webhook integration, 24h SLA on new findings, new-bug-class release notes, annual trend report, pre-commit hook maintenance).
+- README "Audited by CertNode" attestation pattern — paste-ready badge + tweet template for customers who've engaged the audit. Not gated; running the audit makes the badge yours.
+- README "Examples" section linking the new artifacts.
+
+### Changed
+- No code changes in this release; the `index.mjs` audit logic is unchanged from 0.1.2. The version bump is for README + examples additions that warrant a republish so `npm view` shows the latest documentation.
+
 ## [0.1.2] — 2026-05-06
 
 ### Changed
