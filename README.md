@@ -21,7 +21,7 @@ We pointed this audit at our own production codebase (CertNode — ~80k lines of
 - Stripe dispute outcomes that hadn't been persisting for weeks (`disputes.won` and `disputes.evidence_score` were both phantom columns)
 - `connected_accounts.charges_enabled` never flipping after a Stripe deauthorization (phantom column on the deauth handler)
 - A GDPR redaction handler that was a silent no-op (phantom `customer_email` and `dispute_evidence.organization_id`)
-- Bitcoin timestamp anchoring that had been broken since the file shipped (phantom `pdf_stripe_file_id`)
+- Bitcoin Layer 3 timestamp verification 100% broken for 5+ weeks while the hourly cron returned `success: true` every run — three cascading silent bugs each masked by the next; only caught by an end-to-end verification check, never by unit tests or production logs
 - WooCommerce billing rows that never recorded fees (5 phantom columns in one row)
 
 The audit catches all of these with static analysis. The pre-commit hook variant blocks new ones from shipping.
@@ -215,7 +215,7 @@ If you'd rather have someone external run this on your repo, triage the findings
 | **Full delivery** | **$1,497** one-time | Everything in Findings + patch PRs for top 10 + pre-commit hook installed and configured. 7-day turnaround. | Bandwidth-limited shops; the default |
 | **Watch** | **$4,997** / year | Quarterly audit re-runs + new-bug alerts as schema evolves + pre-commit hook maintained. | Teams that want ongoing protection past the first audit |
 
-**No charge if findings are zero** — if your codebase is already clean, congrats, you owe nothing. (Applies to Findings and Full delivery tiers.)
+**No charge if we find fewer than 3 critical findings** — if your codebase is mostly clean, congrats, you owe nothing. (Applies to Findings and Full delivery tiers. "Critical" = phantom column on a revenue-tagged table per your `.silent-write-audit.json` config.)
 
 **First 5 customers (Full delivery only): $1,197** with code `FIRST5` (a $300 founder's discount).
 
