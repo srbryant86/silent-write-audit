@@ -209,18 +209,15 @@ We built this to fix our own codebase. We're open-sourcing it because the bug cl
 
 If you'd rather have someone external run this on your repo, triage the findings, and ship patch PRs — we offer that as a fixed-price service.
 
-**Silent-Write Audit — $1,497 flat, 7 days.**
+| Tier | Price | What you get | Best for |
+|---|---|---|---|
+| **Findings** | **$497** one-time | Audit run + ranked fix list (impact-scored). 3-day turnaround. | Teams with bandwidth to fix the bugs themselves |
+| **Full delivery** | **$1,497** one-time | Everything in Findings + patch PRs for top 10 + pre-commit hook installed and configured. 7-day turnaround. | Bandwidth-limited shops; the default |
+| **Watch** | **$4,997** / year | Quarterly audit re-runs + new-bug alerts as schema evolves + pre-commit hook maintained. | Teams that want ongoing protection past the first audit |
 
-For your $1,497, in 7 calendar days, you get:
+**No charge if findings are zero** — if your codebase is already clean, congrats, you owe nothing. (Applies to Findings and Full delivery tiers.)
 
-1. The full audit (this tool, plus our own extensions for spread-handling and joined-table filters)
-2. A ranked fix list ordered by estimated revenue impact (webhooks updating billing rank above logging-only updates)
-3. Patch PRs for the top 10 findings against your repo (we work on a fork, you merge)
-4. The pre-commit hook installed and configured
-
-**No charge if findings are zero** — if your codebase is already clean, congrats, you owe nothing.
-
-**First 5 customers: $1,197** with code `FIRST5` (a $300 founder's discount).
+**First 5 customers (Full delivery only): $1,197** with code `FIRST5` (a $300 founder's discount).
 
 **Two ways to engage:**
 
