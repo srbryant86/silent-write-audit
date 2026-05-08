@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] — 2026-05-07
+
+### Fixed
+- **Multi-line Supabase join expansions no longer flagged as phantom columns.** The `parseSelectString` join-expansion check used `/\(.*\)/` which doesn't match across newlines, so multi-line selects like `select('*, customers (\n  email,\n  name\n)')` had the joined-table block treated as a phantom column. Switched to `/\([\s\S]*\)/`. Eliminates a class of false positives that surfaced during the CertNode self-audit.
+
 ## [0.3.0] — 2026-05-07
 
 ### Added

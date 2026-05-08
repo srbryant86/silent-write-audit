@@ -329,7 +329,9 @@ function parseSelectString(str) {
 
   const cols = []
   for (const tok of tokens) {
-    if (/\(.*\)/.test(tok)) continue
+    // Skip join expansions like `related_table(col1, col2)` — multi-line forms
+    // require `[\s\S]` because `.` does not match newlines.
+    if (/\([\s\S]*\)/.test(tok)) continue
     const colName = tok.split(':')[0].trim()
     const noCast = colName.split('::')[0].trim()
     if (noCast === '*') continue
